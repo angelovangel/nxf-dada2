@@ -31,19 +31,19 @@ mergestats <- rexmap::merge_pairs(fq_fwd, fq_rev, fq_merged, verbose=TRUE, timin
 trimstats  <- rexmap::remove_pcr_primers(fq_merged, fq_pcrtrimmed, region = args$region, verbose = TRUE, timing = TRUE)
 # 
 mergestatsdf <- data.frame(
-	sample_ids = sample_ids,
+	sample_id = sample_ids,
 	total_reads = as.numeric(mergestats[1, ]),
 	low_pct_sim = as.numeric(mergestats[2, ]),
 	low_aln_len = as.numeric(mergestats[3, ])
 )
 # 
 trimstatsdf <- data.frame(
-	sample_ids = sample_ids,
+	sample_id = sample_ids,
 	total = as.numeric(mergestats[1, ]),
 	fwd_trim = as.numeric(trimstats[1,]),
 	rev_trim = as.numeric(trimstats[2,])
 	)
 # 
 # 
-write.table(mergestatsdf, file = "merge-stats.csv", row.names = FALSE, col.names = FALSE)
-write.table(trimstatsdf, file = "primertrim-stats.csv", row.names = FALSE, col.names = FALSE)
+write.table(mergestatsdf, file = "merge.csv", row.names = FALSE, col.names = FALSE, sep = ",")
+write.table(trimstatsdf, file = "primertrim.csv", row.names = FALSE, col.names = FALSE, sep = ",")
