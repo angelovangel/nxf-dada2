@@ -25,6 +25,13 @@ fq_fltrimmed <- file.path(paste0(sample_ids, '_fltrimmed.fastq'))
 # perform fl trim
 seqlen.ft <- sequence_length_table(args$fastqfiles)
 trimlen <- ftquantile(seqlen.ft, prob = args$prob)
+# plot and save the plot
+pdf(file = "seqlen-fltrim-plot.pdf", width = 7, height = 4)
+plot(seqlen.ft, 
+		 main = "Sequence lengths table", xlab = "lengths", ylab = "counts",
+		 sub = paste("The trim length used is", trimlen, "bp", sep = " "))
+dev.off()
+##
 filtstats <- filter_and_trim(args$fastqfiles, fq_fltrimmed, truncLen=trimlen, verbose=T)
 
 

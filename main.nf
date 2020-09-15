@@ -41,7 +41,8 @@ process merge_and_trim {
         tuple sample_id, file(x) from fastq_ch
     output:
         file '*_merged.fastq'
-        file '*_trimmed.fastq' into mergetrim_ch // this goes to next step
+        file '*_trimmed.fastq' into mergetrim_ch1
+        file '*_trimmed.fastq' into mergetrim_ch2 // 1 goes to fixed_len_trim, 2 goes to dada2
         file 'merge.csv' into mergestats_ch
         file 'primertrim.csv' into trimstats_ch
     script:
@@ -67,17 +68,32 @@ process merge_and_trim_stats {
     """
 }
 
-// fixed len trimming is done on all files, collected from mergetrim_ch, therefore a separate process
+// fixed len trimming is done on all files, collected from mergetrim_ch1, therefore a separate process
 process fixed_len_trim {
-    tag "$sample_id"
     publishDir "${params.outdir}/merged_trimmed_reads", enabled: params.keep_fastq, mode: 'copy'
+    publishDir params.outdir, mode: 'copy', pattern: '*.pdf'
 
     input:
-        file x from mergetrim_ch.collect()
+        file x from mergetrim_ch1.collect()
     output:
         file '*_fltrimmed.fastq' into fltrim_ch
+        file 'seqlen-fltrim-plot.pdf'
     script:
     """
     02_fl_trim.R ${x}
+    """
+}
+
+process dada2 {
+    publishDir params.outdir, mode: 'copy', pattern: '*.rds'
+
+    input:
+        file fltrimmed from fltrim_ch
+        file fluntrimmed from mergetrim_ch2.collect()
+    output:
+        file '*.rds'
+    script:
+    """
+    03_dada.R --fltrimmed ${fltrimmed} --fluntrimmed ${fluntrimmed}
     """
 }
