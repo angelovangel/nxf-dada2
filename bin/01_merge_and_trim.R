@@ -26,7 +26,7 @@ sample_ids <- rexmap::sampleids_from_filenames(fq_fwd, separator = "_") ########
 fq_merged <- file.path(paste0(sample_ids, '_merged.fastq'))
 fq_pcrtrimmed <- file.path(paste0(sample_ids, '_trimmed.fastq'))
 # 
-# actual merge
+# actual merge and pcr-trim
 mergestats <- rexmap::merge_pairs(fq_fwd, fq_rev, fq_merged, verbose=TRUE, timing = TRUE)
 trimstats  <- rexmap::remove_pcr_primers(fq_merged, fq_pcrtrimmed, region = args$region, verbose = TRUE, timing = TRUE)
 # 

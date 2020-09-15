@@ -40,7 +40,8 @@ process merge_and_trim {
     input:
         tuple sample_id, file(x) from fastq_ch
     output:
-        file '*_{trimmed,merged}.fastq' into mergetrim_ch
+        file '*_merged.fastq'
+        file '*_trimmed.fastq' into mergetrim_ch // this goes to next step
         file 'merge.csv' into mergestats_ch
         file 'primertrim.csv' into trimstats_ch
     script:
@@ -66,3 +67,17 @@ process merge_and_trim_stats {
     """
 }
 
+// fixed len trimming is done on all files, collected from mergetrim_ch, therefore a separate process
+process fixed_len_trim {
+    tag "$sample_id"
+    publishDir "${params.outdir}/merged_trimmed_reads", enabled: params.keep_fastq, mode: 'copy'
+
+    input:
+        file x from mergetrim_ch.collect()
+    output:
+        file '*_fltrimmed.fastq' into fltrim_ch
+    script:
+    """
+    02_fl_trim.R ${x}
+    """
+}
