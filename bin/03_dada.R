@@ -3,7 +3,7 @@
 # step 2
 # fixed length trimming
 
-# args are the fltrimmed and fluntrimmed fastq files
+# args are the fltrimmed and fluntrimmed fastq files, and region
 #require(dada2)
 require(rexmap)
 require(argparse)
@@ -11,11 +11,32 @@ require(argparse)
 parser <- ArgumentParser(description='dada2 denoise')
 parser$add_argument('--fltrimmed', metavar = "trimmed fastqfiles", nargs = '+', help = 'fixed len trimmed fastq files')
 parser$add_argument('--fluntrimmed', metavar = "untrimmed fastqfiles", nargs = '+', help = 'fixed length untrimmed fastq files')
+parser$add_argument('--region', default = 'V3-V4', help = 'Hypervariable region used. Used in blast')
 
 args <- parser$parse_args()
+### sort the arguments here to make sure the fltrimmed and fluntrimmed files match!
+args$fltrimmed <- sort(args$fltrimmed)
+args$fluntrimmed <- sort(args$fluntrimmed)
+###
+#cat(args$fltrimmed)
+#cat(args$fluntrimmed)
+
 
 dada_result <- dada_denoise(args$fltrimmed, args$fluntrimmed, verbose = TRUE, timing = TRUE)
 ab.dt <- sequence_abundance(dada_result)
 ab.dt.nobim <- sequence_abundance(dada_result, remove_bimeras = FALSE)
 
-saveRDS(dada_result, file = "dada2_denoise.rds")
+bimeras_by_unique <- (max(ab.dt.nobim$qseqid) - max(ab.dt$qseqid)) / max(ab.dt.nobim$qseqid) * 100
+bimeras_by_abundance <- (ab.dt.nobim[,sum(raw_count)]-ab.dt[,sum(raw_count)])/ab.dt[,sum(raw_count)] * 100
+
+# blast, osu and taxonomy
+blast_output <- blast(ab.dt, region = args$region, verbose = TRUE)
+osu_ab.dt <- abundance(abundance_table = ab.dt, blast_object = blast_output, verbose = TRUE)
+osu_tax.dt <- taxonomy(osu_ab.dt, verbose = TRUE)
+
+# save artefacts
+saveRDS(dada_result, file = "dada2_result.rds")
+write.table(ab.dt, file = "dada2_abundance_table.csv", sep = ",", row.names = FALSE)
+write.table(osu_ab.dt, file = "dada2_osu_table.csv", sep = ",", row.names = FALSE)
+write.table(osu_tax.dt, file = "dada2_taxonomy_osu_table.csv", sep = ",", row.names = FALSE)
+

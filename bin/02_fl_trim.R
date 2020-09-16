@@ -33,5 +33,6 @@ plot(seqlen.ft,
 dev.off()
 ##
 filtstats <- filter_and_trim(args$fastqfiles, fq_fltrimmed, truncLen=trimlen, verbose=T)
-
+write.table(data.frame(file = rownames(filtstats), filtstats), 
+						file = "stats-fltrim.csv", sep = ",", row.names = FALSE)
 

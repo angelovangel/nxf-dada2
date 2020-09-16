@@ -14,8 +14,7 @@ params.fastqdir = "fastq"
 params.outdir = "$workflow.launchDir/results-rexmap"
 params.fqpattern = "*_R{1,2}_001.fastq.gz"
 params.region = "V3-V4"
-
-params.keep_fastq
+params.keep_fastq = false
 
 params.help = ""
 
@@ -51,6 +50,23 @@ process merge_and_trim {
     """
 }
 
+// fixed len trimming is done on all files, collected from mergetrim_ch1, therefore a separate process
+process fixed_len_trim {
+    publishDir "${params.outdir}/merged_trimmed_reads", enabled: params.keep_fastq, mode: 'copy', pattern: '*_fltrimmed.fastq'
+    publishDir params.outdir, mode: 'copy', pattern: '*.{pdf,csv}'
+
+    input:
+        file x from mergetrim_ch1.collect()
+    output:
+        file '*_fltrimmed.fastq' into fltrim_ch
+        file 'seqlen-fltrim-plot.pdf'
+        file 'stats-fltrim.csv'
+    script:
+    """
+    02_fl_trim.R ${x}
+    """
+}
+
 process merge_and_trim_stats {
     publishDir params.outdir, mode: 'copy'
 
@@ -68,32 +84,17 @@ process merge_and_trim_stats {
     """
 }
 
-// fixed len trimming is done on all files, collected from mergetrim_ch1, therefore a separate process
-process fixed_len_trim {
-    publishDir "${params.outdir}/merged_trimmed_reads", enabled: params.keep_fastq, mode: 'copy'
-    publishDir params.outdir, mode: 'copy', pattern: '*.pdf'
-
-    input:
-        file x from mergetrim_ch1.collect()
-    output:
-        file '*_fltrimmed.fastq' into fltrim_ch
-        file 'seqlen-fltrim-plot.pdf'
-    script:
-    """
-    02_fl_trim.R ${x}
-    """
-}
-
-process dada2 {
-    publishDir params.outdir, mode: 'copy', pattern: '*.rds'
+process dada2_asv {
+    publishDir params.outdir, mode: 'copy'
 
     input:
         file fltrimmed from fltrim_ch
-        file fluntrimmed from mergetrim_ch2.collect()
+        file fluntrimmed from mergetrim_ch2.collect() // toSortedList?
     output:
-        file '*.rds'
+        file 'dada2_result.rds'
+        file '*.csv'
     script:
     """
-    03_dada.R --fltrimmed ${fltrimmed} --fluntrimmed ${fluntrimmed}
+    03_dada.R --fltrimmed ${fltrimmed} --fluntrimmed ${fluntrimmed} --region ${params.region}
     """
 }
