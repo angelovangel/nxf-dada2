@@ -31,12 +31,14 @@ bimeras_by_abundance <- (ab.dt.nobim[,sum(raw_count)]-ab.dt[,sum(raw_count)])/ab
 
 # blast, osu and taxonomy
 blast_output <- blast(ab.dt, region = args$region, verbose = TRUE)
+
 osu_ab.dt <- abundance(abundance_table = ab.dt, blast_object = blast_output, verbose = TRUE)
 osu_tax.dt <- taxonomy(osu_ab.dt, verbose = TRUE)
+osu_seq.dt = osu_sequences(osu_ab.dt, blast_output)
 
 # save artefacts
 saveRDS(dada_result, file = "dada2_result.rds")
-write.table(ab.dt, file = "dada2_abundance_table.csv", sep = ",", row.names = FALSE)
-write.table(osu_ab.dt, file = "dada2_osu_table.csv", sep = ",", row.names = FALSE)
-write.table(osu_tax.dt, file = "dada2_taxonomy_osu_table.csv", sep = ",", row.names = FALSE)
+write.table(osu_seq.dt, file = "osu_sequences.csv", sep = ",", row.names = FALSE)
+write.table(osu_ab.dt, file = "osu_abundances.csv", sep = ",", row.names = FALSE)
+write.table(osu_tax.dt, file = "osu_taxonomy.csv", sep = ",", row.names = FALSE)
 
