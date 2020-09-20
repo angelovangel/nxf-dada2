@@ -11,7 +11,7 @@ if( !nextflow.version.matches('>=19.08') ) {
  * pipeline input parameters 
  */
 params.fastqdir = "fastq"
-params.outdir = "$workflow.launchDir/results-rexmap"
+params.outdir = "$workflow.launchDir/results-dada2"
 params.fqpattern = "*_R{1,2}_001.fastq.gz"
 params.region = "V3-V4"
 params.keep_fastq = false

@@ -1,7 +1,6 @@
 #!/usr/bin/env Rscript
 
-# step 2
-# fixed length trimming
+# rexmap step
 
 # args are the fltrimmed and fluntrimmed fastq files, and region
 #require(dada2)
