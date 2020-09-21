@@ -92,9 +92,22 @@ process dada2_asv {
         file fluntrimmed from mergetrim_ch2.collect() // toSortedList?
     output:
         file 'dada2_result.rds'
-        file '*.csv'
+        file '*.csv' into dada2_ch
     script:
     """
     03_dada.R --fltrimmed ${fltrimmed} --fluntrimmed ${fluntrimmed} --region ${params.region}
+    """
+}
+
+process phyloseq {
+    publishDir params.outdir, mode: 'copy'
+
+    input: 
+        file 'osu_*.csv' from dada2_ch.collect()
+    output:
+        file 'physeq.Rdata'
+    script:
+    """
+    04_phyloseq.R --osu_ab osu_1.csv --osu_tax osu_3.csv
     """
 }

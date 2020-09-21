@@ -51,5 +51,5 @@ physeq <- phyloseq(
 	otu_table(OSU),
 	tax_table(TAX)
 	)
-physeq
+save(physeq, file = "physeq.Rdata")
 
