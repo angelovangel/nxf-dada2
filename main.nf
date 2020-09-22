@@ -13,7 +13,7 @@ if( !nextflow.version.matches('>=19.08') ) {
 params.fastqdir = "fastq"
 params.outdir = "$workflow.launchDir/results-dada2"
 params.fqpattern = "*_R{1,2}_001.fastq.gz"
-params.region = "V3-V4"
+params.region = "V4"
 params.keep_fastq = false
 
 params.help = ""
@@ -42,8 +42,8 @@ process merge_and_trim {
         file '*_merged.fastq'
         file '*_trimmed.fastq' into mergetrim_ch1
         file '*_trimmed.fastq' into mergetrim_ch2 // 1 goes to fixed_len_trim, 2 goes to dada2
-        file 'merge.csv' into mergestats_ch
-        file 'primertrim.csv' into trimstats_ch
+        file 'merge.csv' into merge_stats_ch
+        file 'primertrim.csv' into trim_stats_ch
     script:
     """
     01_merge_and_trim.R --region ${params.region} ${x}
@@ -60,7 +60,7 @@ process fixed_len_trim {
     output:
         file '*_fltrimmed.fastq' into fltrim_ch
         file 'seqlen-fltrim-plot.pdf'
-        file 'stats-fltrim.csv'
+        file 'stats-fltrim.csv' into fltrim_stats_ch
     script:
     """
     02_fl_trim.R ${x}
@@ -71,8 +71,9 @@ process merge_and_trim_stats {
     publishDir params.outdir, mode: 'copy'
 
     input:
-        file 'merge*' from mergestats_ch.collect()
-        file 'primertrim*' from trimstats_ch.collect()
+        file 'merge*' from merge_stats_ch.collect()
+        file 'primertrim*' from trim_stats_ch.collect()
+        file 'stats-fltrim.csv' from fltrim_stats_ch
     output:
         file 'stats*.csv'
     script:
@@ -81,6 +82,8 @@ process merge_and_trim_stats {
     cat merge* >> stats-merge.csv
     echo "sample_id, total, fwd_trim, rev_trim" > stats-primertrim.csv
     cat primertrim* >> stats-primertrim.csv
+    stats-table.R --stats_merge_file stats-merge.csv --stats_fltrim_file stats-fltrim.csv
+
     """
 }
 
@@ -103,11 +106,11 @@ process phyloseq {
     publishDir params.outdir, mode: 'copy'
 
     input: 
-        file 'osu_*.csv' from dada2_ch.collect()
+        file x from dada2_ch //this is a list with the files arranged alphabetically
     output:
         file 'physeq.Rdata'
     script:
     """
-    04_phyloseq.R --osu_ab osu_1.csv --osu_tax osu_3.csv
+    04_phyloseq.R --osu_ab ${x[0]} --osu_tax ${x[2]}
     """
 }
