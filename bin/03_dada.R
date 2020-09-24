@@ -22,7 +22,7 @@ args$fluntrimmed <- sort(args$fluntrimmed)
 
 
 dada_result <- dada_denoise(args$fltrimmed, args$fluntrimmed, verbose = TRUE, timing = TRUE)
-ab.dt <- sequence_abundance(dada_result)
+ab.dt <- sequence_abundance(dada_result, fq_prefix_split = "_")
 ab.dt.nobim <- sequence_abundance(dada_result, remove_bimeras = FALSE)
 
 bimeras_by_unique <- (max(ab.dt.nobim$qseqid) - max(ab.dt$qseqid)) / max(ab.dt.nobim$qseqid) * 100
@@ -33,11 +33,15 @@ blast_output <- blast(ab.dt, region = args$region, verbose = TRUE)
 
 osu_ab.dt <- abundance(abundance_table = ab.dt, blast_object = blast_output, verbose = TRUE)
 osu_tax.dt <- taxonomy(osu_ab.dt, verbose = TRUE)
-osu_seq.dt = osu_sequences(osu_ab.dt, blast_output)
+osu_seq.dt <- osu_sequences(osu_ab.dt, blast_output)
 
 # save artefacts
-saveRDS(dada_result, file = "dada2_result.rds")
-write.table(osu_seq.dt, file = "osu_sequences.csv", sep = ",", row.names = FALSE)
-write.table(osu_ab.dt, file = "osu_abundances.csv", sep = ",", row.names = FALSE)
-write.table(osu_tax.dt, file = "osu_taxonomy.csv", sep = ",", row.names = FALSE)
+# saveRDS(dada_result, file = "dada2_result.rds")
+savetable <- function(obj, file) {
+	write.table(obj, file = file, sep = "\t", row.names = FALSE)
+}
+objs <- list(ab.dt, osu_seq.dt, osu_ab.dt, osu_tax.dt)
+files <- c("ab.dt", "osu_sequences.csv", "osu_abundances.csv", "osu_taxonomy.csv")
+mapply(savetable, objs, files)
+
 

@@ -53,7 +53,7 @@ process merge_and_trim {
 // fixed len trimming is done on all files, collected from mergetrim_ch1, therefore a separate process
 process fixed_len_trim {
     publishDir "${params.outdir}/merged_trimmed_reads", enabled: params.keep_fastq, mode: 'copy', pattern: '*_fltrimmed.fastq'
-    publishDir params.outdir, mode: 'copy', pattern: '*.{pdf,csv}'
+    publishDir "${params.outdir}/statistics", mode: 'copy', pattern: '*.{pdf,csv}'
 
     input:
         file x from mergetrim_ch1.collect()
@@ -67,13 +67,32 @@ process fixed_len_trim {
     """
 }
 
-process merge_and_trim_stats {
-    publishDir params.outdir, mode: 'copy'
+process dada2_asv {
+    publishDir params.outdir, mode: 'copy', pattern: '*.csv'
+
+    input:
+        file fltrimmed from fltrim_ch
+        file fluntrimmed from mergetrim_ch2.collect() // toSortedList?
+    output:
+        //file 'dada2_result.rds'
+        file 'ab.dt' into ab_dt_ch
+        file 'osu_abundances.csv' into osu_ab_ch
+        file '*.csv' into dada2_ch
+    script:
+    """
+    03_dada.R --fltrimmed ${fltrimmed} --fluntrimmed ${fluntrimmed} --region ${params.region}
+    """
+}
+
+process read_counts_stats {
+    publishDir "${params.outdir}/statistics", mode: 'copy'
 
     input:
         file 'merge*' from merge_stats_ch.collect()
         file 'primertrim*' from trim_stats_ch.collect()
         file 'stats-fltrim.csv' from fltrim_stats_ch
+        file 'ab.dt' from ab_dt_ch
+        file 'osu_abundances.csv' from osu_ab_ch
     output:
         file 'stats*.csv'
     script:
@@ -82,28 +101,16 @@ process merge_and_trim_stats {
     cat merge* >> stats-merge.csv
     echo "sample_id, total, fwd_trim, rev_trim" > stats-primertrim.csv
     cat primertrim* >> stats-primertrim.csv
-    stats-table.R --stats_merge_file stats-merge.csv --stats_fltrim_file stats-fltrim.csv
-
+    stats-table.R \
+        --stats_merge_file stats-merge.csv \
+        --stats_fltrim_file stats-fltrim.csv \
+        --ab_file ab.dt \
+        --osu_ab_file osu_abundances.csv
     """
 }
 
-process dada2_asv {
-    publishDir params.outdir, mode: 'copy'
-
-    input:
-        file fltrimmed from fltrim_ch
-        file fluntrimmed from mergetrim_ch2.collect() // toSortedList?
-    output:
-        file 'dada2_result.rds'
-        file '*.csv' into dada2_ch
-    script:
-    """
-    03_dada.R --fltrimmed ${fltrimmed} --fluntrimmed ${fluntrimmed} --region ${params.region}
-    """
-}
-
-process phyloseq {
-    publishDir params.outdir, mode: 'copy'
+process construct_phyloseq {
+    publishDir "${params.outdir}/phyloseq", mode: 'copy'
 
     input: 
         file x from dada2_ch //this is a list with the files arranged alphabetically
