@@ -15,6 +15,10 @@ params.outdir = "$workflow.launchDir/results-dada2"
 params.fqpattern = "*_R{1,2}_001.fastq.gz"
 params.region = "V4"
 params.keep_fastq = false
+params.ftprob = 0.01 // the probability used in the ftquantile() function in 02_fl_trim.R
+// e.g. to find minimum sequence length, above which we have 99% reads
+// ftquantile(seqlen.ft, 0.01)
+
 
 params.help = ""
 
@@ -63,7 +67,7 @@ process fixed_len_trim {
         file 'stats-fltrim.csv' into fltrim_stats_ch
     script:
     """
-    02_fl_trim.R ${x}
+    02_fl_trim.R ${x} --prob ${params.ftprob}
     """
 }
 
