@@ -1,4 +1,4 @@
-// nextflow-rexmap pipelen
+// nextflow-rexmap pipeline
 /*
 NXF ver 19.08+ needed because of the use of tuple instead of set
 */
@@ -25,6 +25,31 @@ params.help = ""
 /* 
  * pipeline input parameters end
  */
+
+if (params.help) {
+    helpMessage()
+    exit(0)
+}
+
+def helpMessage() {
+log.info """
+        ===========================================
+         R E X M A P (D A D A 2)  P I P E L I N E
+  
+         Usage:
+        -------------------------------------------
+         --fastqdir         : directory with fastq files, default is "fastq"
+         --fqpattern        : regex pattern to match fastq files, default is "*R{1,2}_001.fastq.gz"
+         --outdir           : where results will be saved, default is "results-dada2"
+         --region           : 16S rRNA gene region used, default is V4
+         --keep_fastq       : weather to keep intermediate fastq files, default is false
+         --ftprob           : the probability used in the ftquantile() function, default is 0.01 (see rexmap R package)
+        ===========================================
+         """
+         .stripIndent()
+
+}
+
 
 //just in case trailing slash in readsdir not provided...
 fastqdir_repaired = "${params.fastqdir}".replaceFirst(/$/, "/") 
@@ -105,7 +130,7 @@ process read_counts_stats {
     cat merge* >> stats-merge.csv
     echo "sample_id, total, fwd_trim, rev_trim" > stats-primertrim.csv
     cat primertrim* >> stats-primertrim.csv
-    stats-table.R \
+    04_stats-table.R \
         --stats_merge_file stats-merge.csv \
         --stats_fltrim_file stats-fltrim.csv \
         --ab_file ab.dt \
@@ -122,6 +147,6 @@ process construct_phyloseq {
         file 'physeq.Rdata'
     script:
     """
-    04_phyloseq.R --osu_ab ${x[0]} --osu_tax ${x[2]}
+    05_phyloseq.R --osu_ab ${x[0]} --osu_tax ${x[2]}
     """
 }
