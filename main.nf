@@ -35,6 +35,7 @@ def helpMessage() {
 log.info """
         ===========================================
          R E X M A P (D A D A 2)  P I P E L I N E
+         https://github.com/angelovangel/nxf-dada2
   
          Usage:
         -------------------------------------------
@@ -49,6 +50,29 @@ log.info """
          .stripIndent()
 
 }
+
+log.info """
+        ===========================================
+         R E X M A P (D A D A 2)  P I P E L I N E
+         https://github.com/angelovangel/nxf-dada2 
+
+         Used parameters:
+        -------------------------------------------
+         --fastqdir         : ${params.fastqdir}
+         --fqpattern        : ${params.fqpattern}
+         --outdir           : ${params.outdir}
+         --region           : ${params.region}
+         --keep_fastq       : ${params.keep_fastq}
+         --ftprob           : ${params.ftprob}
+
+         Runtime data:
+        -------------------------------------------
+         Running with profile:   ${workflow.profile}
+         Running as user:        ${workflow.userName}
+         Launch dir:             ${workflow.launchDir}
+         Base dir:               ${baseDir}
+         """
+         .stripIndent()
 
 
 //just in case trailing slash in readsdir not provided...
